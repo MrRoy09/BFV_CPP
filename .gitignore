@@ -1,0 +1,10 @@
+test_*
+.gdb*
+/backup
+/.vscode
+/bfv-python
+test_bfv_poly
+test_homo_ops
+test_message_encoding
+test_ntt
+test_poly
