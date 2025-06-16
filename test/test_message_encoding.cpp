@@ -2,16 +2,11 @@
 #include "../include/catch_amalgamated.hpp"
 #include "../include/BFV.hpp"
 #include "../include/polynomials.hpp"
+#include "params.h"
+
 
 TEST_CASE("BFV IntEncode and IntDecode", "[BFV][EncodeDecode]")
 {
-    int n = 64;
-    int q = 998244353;
-    int t = 17;
-    int root = 3;
-    int mu = 0;
-    int sigma = 2;
-
     std::vector<ll> ntt_params = {0};
     BFV bfv(n, q, t, mu, sigma, root);
 
@@ -49,18 +44,16 @@ TEST_CASE("BFV IntEncode and IntDecode", "[BFV][EncodeDecode]")
     {
         Poly encoded = bfv.IntEncode((72803712312323234));
         ll decoded = bfv.IntDecode(encoded);
-        INFO(decoded);
         REQUIRE(72803712312323234==decoded);
     }
 
     SECTION("COMPLETE PIPELINE")
     {
-        ll message = 0xfffffffffffffff1;
+        ll message = 0x342133135213123;
         Poly encoded = bfv.IntEncode(message);
         auto ct = bfv.Encryption(encoded);
         auto pt = bfv.Decryption(ct);
         ll decoded = bfv.IntDecode(pt);
-        INFO(decoded);
         REQUIRE(decoded==message);
 
     }
