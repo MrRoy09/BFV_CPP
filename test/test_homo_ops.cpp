@@ -1,23 +1,19 @@
 #define CATCH_CONFIG_MAIN
 #include "../include/catch_amalgamated.hpp"
 #include "../include/BFV.hpp"
+#include "params.h"
 
 TEST_CASE("BFV Homomorphic Operations", "[bfv][homomorphic]")
 {
-    ll n = 64;
-    ll q = 998244353;
-    ll t = 17;
-    ll mu = 0;
-    ll sigma = 2;
-    ll root = 3;
-    ll T = 256;
 
     BFV bfv(n, q, t, mu, sigma, root);
 
     bfv.sk_gen();
     bfv.pk_gen();
 
-    ll m1 = 10;
+    bfv.EvalKeyGen(T);
+
+    ll m1 = 50;
     ll m2 = 3;
 
     Poly pt1 = bfv.IntEncode(m1);
@@ -30,13 +26,9 @@ TEST_CASE("BFV Homomorphic Operations", "[bfv][homomorphic]")
     {
         auto ct_add = bfv.HomomorphicAddition(ct1, ct2);
         Poly pt_dec = bfv.Decryption(ct_add);
-        ll result = (((bfv.IntDecode(pt_dec)) % t) + t) % t;
-        ll expected = (m1 + m2) % t;
-        if (expected < 0)
-            expected += t;
-
+        ll result = bfv.IntDecode(pt_dec);
+        ll expected = (m1 + m2);
         INFO("Addition Test Failed");
-        CAPTURE(m1, m2, result, expected);
         REQUIRE(result == expected);
     }
 
@@ -44,13 +36,33 @@ TEST_CASE("BFV Homomorphic Operations", "[bfv][homomorphic]")
     {
         auto ct_sub = bfv.HomomorphicSubtraction(ct1, ct2);
         Poly pt_dec = bfv.Decryption(ct_sub);
-        ll result = (((bfv.IntDecode(pt_dec)) % t) + t) % t;
-        ll expected = (m1 - m2) % t;
-        if (expected < 0)
-            expected += t;
+
+        std::cout << "Subtraction coeffs: ";
+
+        ll result = (bfv.IntDecode(pt_dec));
+        ll expected = (m1 - m2);
 
         INFO("Subtraction Test Failed");
-        CAPTURE(m1, m2, result, expected);
+        REQUIRE(result == expected);
+    }
+
+    SECTION("Homomorphic Multiplication")
+    {
+
+        auto ct_mul = bfv.HomomorphicMultiplication(ct1, ct2);
+
+        Poly sk2 = bfv.sk * bfv.sk;
+        Poly m_before_scaling = ct_mul[0] + (ct_mul[1] * bfv.sk) + (ct_mul[2] * sk2);
+
+        auto ct_rel = bfv.Relinearization(ct_mul);
+        Poly pt_dec2 = bfv.DecryptionV2(ct_mul);
+        Poly pt_dec = bfv.Decryption(ct_rel);
+
+        ll result = (((bfv.IntDecode(pt_dec))));
+        ll result2 = bfv.IntDecode(pt_dec2);
+        ll expected = (m1 * m2);
+        INFO("Multiplication Test Failed");
+        REQUIRE(result2 == expected);
         REQUIRE(result == expected);
     }
 }
